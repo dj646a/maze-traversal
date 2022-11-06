@@ -10,5 +10,5 @@ See:
 
 ## Quick start
 ```
-    cc ./src/main.c -o maze-traversal && ./maze-traversal
+    cc ./src/main.c -lSDL2 -o maze-traversal && ./maze-traversal
 ```
