@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <assert.h>
 
 /*
     TODO:
-
-    Create a pixel buffer.
-    Blit to a pixel buffer.
 
     Create a maze struct.
     Blit a maze struct.
@@ -28,8 +26,32 @@ static void SDL_ErrorAndExit(void)
     exit(EXIT_FAILURE);
 }
 
+static void blit_to_window(SDL_Window* window, uint32_t* pixels)
+{
+    int window_w, window_h;
+    SDL_GetWindowSize(window, &window_w, &window_h);
+
+    SDL_Surface* window_surface = SDL_GetWindowSurface(window);
+    {
+        SDL_UnlockSurface(window_surface);
+        memcpy(window_surface->pixels, pixels, window_w * window_h * sizeof(*pixels));
+        SDL_LockSurface(window_surface);
+    }
+    SDL_UpdateWindowSurface(window);
+}
+
+static void clear_pixels(uint32_t* pixels, int width, int height, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    for (int i = 0; i < width * height; i++)
+    {
+        uint32_t rgba = (a << 24) | (r << 16) | (g << 8) | (b << 0);
+        pixels[i] = rgba;
+    }
+}
+
 int main(void)
 {
+    /* ----------------------------------- Create window ---------------------------------- */
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
         SDL_ErrorAndExit();
 
@@ -45,9 +67,20 @@ int main(void)
     if (!window)
         SDL_ErrorAndExit();
 
+    /* -------------------------------- Create pixel buffer ------------------------------- */
+    int pixel_buffer_w = window_w;
+    int pixel_buffer_h = window_h;
+    uint32_t* pixel_buffer = malloc(pixel_buffer_w * pixel_buffer_h * sizeof(*pixel_buffer));
+    memset(pixel_buffer, 0, pixel_buffer_w * pixel_buffer_h * sizeof(*pixel_buffer));
+
     window_open = true;
     while(window_open)
     {
+        /* -------------------------------------- Render -------------------------------------- */
+        clear_pixels(pixel_buffer, pixel_buffer_w, pixel_buffer_h, 0xFF, 0x00, 0x00, 0xFF);
+        blit_to_window(window, pixel_buffer);
+
+        /* ------------------------------------ Poll events ----------------------------------- */
         SDL_Event* event = &(SDL_Event) {0};
         while (SDL_PollEvent(event))
         {
